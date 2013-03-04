@@ -24,6 +24,7 @@ Conrad is a console app to play shoutcast internet radio streams.
 ## 2. Building conrad  
 
 **Dependencies**  
+
 - libfmodex (bundled)
 
     FmodEx libraries are part of FMOD Sound System.  
@@ -32,10 +33,12 @@ Conrad is a console app to play shoutcast internet radio streams.
 
 - libcurl
 
-    Fetching and installing libcurl.  
-
+    Fetching and installing libcurl:  
     On Ubuntu 11.10, the following command does the job  
     `sudo apt-get install libcurl4-gnutls-dev`
+
+
+To build conrad, execute `make` in the root of the repository. Ensure that the aforementioned dependencies are satisfied. Checkout `Makefile` for more details.
 
 
 ## 3. Running conrad  
