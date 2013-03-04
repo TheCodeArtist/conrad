@@ -1,0 +1,17 @@
+=============
+  TODO.txt
+=============
+
+Following is a list of features that need to be implemented in conrad.
+
+1. "Now-Playing" info
+[ ] Scrape "Now-Playing" info from the streamdata and display on console.
+[ ] Enable colored text/background support.
+
+
+2. Pause/Play
+[+] Enable pause/play during playback.
+[ ] Enable "Jump to live" after paused playback. 
+
+
+
