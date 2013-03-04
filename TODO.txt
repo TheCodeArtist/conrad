@@ -4,14 +4,16 @@
 
 Following is a list of features that need to be implemented in conrad.
 
-1. "Now-Playing" info
+"Now-Playing" info
 [ ] Scrape "Now-Playing" info from the streamdata and display on console.
+[ ] Display station-info on console (from initial http header reply). 
 [ ] Enable colored text/background support.
 
 
-2. Pause/Play
+Pause/Play
 [+] Enable pause/play during playback.
 [ ] Enable "Jump to live" after paused playback. 
 
-
-
+Volume Control
+[ ] Provide volume control keys.
+[ ] Display current volume on console.
