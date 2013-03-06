@@ -16,6 +16,11 @@
 #include "fmodapi44407linux/api/inc/fmod_errors.h"
 #include "fmodapi44407linux/examples/common/wincompat.h"
 
+#define DEBUG	0
+
+#define debug(fmt, ...) \
+	do { if (DEBUG) fprintf(stderr, fmt, __VA_ARGS__); } while (0)
+
 const char * STATION_URL="http://203.150.225.77:8000";
 const int intial_buffering_delay = 3;
 const int fs_buffer_size = 1024;
@@ -39,7 +44,7 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream)
 	int written=0;
 
 	written = fwrite(ptr, size, nmemb, (FILE *)stream);
-	printf("written=%d\tsize=%d\tnmemb=%d\ttotal=%d\n", written, size, nmemb, size*nmemb);
+	debug("written=%d\tsize=%d\tnmemb=%d\ttotal=%d\n", written, size, nmemb, size*nmemb);
 
 	return nmemb;
 }
