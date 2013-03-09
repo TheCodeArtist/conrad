@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdbool.h>
+#include <errno.h>
 
 /* CURL for reader-thread */
 #include <curl/curl.h>
@@ -22,9 +24,14 @@
 	do { if (DEBUG) fprintf(stderr, fmt, __VA_ARGS__); } while (0)
 
 const char * STATION_URL="http://203.150.225.77:8000";
+const char *bodyfilename = "wave.dat";
 const int intial_buffering_delay = 3;
 const int fs_buffer_size = 1024;
 const int playback_buffer_size = 4096;
+
+CURL *curl_handle;
+FILE *bodyfile;
+bool stop_signal_received = FALSE;
 
 /****************************************************
  *
@@ -33,8 +40,11 @@ const int playback_buffer_size = 4096;
  ****************************************************/  
 void sighand(int signo)
 {
-	pthread_t self = pthread_self();
- 
+	if (signo == SIGALRM) {
+		debug("Received signal 0x%x\n", signo);
+		stop_signal_received = TRUE;
+	}
+
 	return;
 }
 
@@ -46,15 +56,14 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream)
 	written = fwrite(ptr, size, nmemb, (FILE *)stream);
 	debug("written=%d\tsize=%d\tnmemb=%d\ttotal=%d\n", written, size, nmemb, size*nmemb);
 
+	/* Returning -EINVAL terminates the curl_easy_perform() */
+	if(stop_signal_received) return -EINVAL;
+
 	return nmemb;
 }
 
 int curl_main(void)
 {
-	CURL *curl_handle;
-	static const char *bodyfilename = "wave.dat";
-	FILE *bodyfile;
-
 	curl_global_init(CURL_GLOBAL_ALL);
 
 	/* init the curl session */
@@ -219,7 +228,7 @@ int main(int argc, char *argv[])
 	FMOD_SOUND		*sound;
 	FMOD_CHANNEL		*channel = 0;
 	FMOD_RESULT		result;
-	int			key;
+	int			key, paused;
 	unsigned int		version;
 
 	memset(&actions, 0, sizeof(actions));
@@ -288,15 +297,12 @@ int main(int argc, char *argv[])
 		{
 			key = getch();
 
-			switch (key)
-			{
-				case ' ' :
-					{
-						int paused;
-						FMOD_Channel_GetPaused(channel, &paused);
-						FMOD_Channel_SetPaused(channel, !paused);
-						break;
-					}
+			switch (key) {
+
+			case ' ' :
+				FMOD_Channel_GetPaused(channel, &paused);
+				FMOD_Channel_SetPaused(channel, !paused);
+				break;
 			}
 		}
 
@@ -307,7 +313,6 @@ int main(int argc, char *argv[])
 			unsigned int ms;
 			unsigned int lenms;
 			int          playing;
-			int          paused;
 
 			FMOD_Channel_IsPlaying(channel, &playing);
 			if ((result != FMOD_OK) && (result != FMOD_ERR_INVALID_HANDLE) && (result != FMOD_ERR_CHANNEL_STOLEN))
@@ -333,7 +338,9 @@ int main(int argc, char *argv[])
 				ERRCHECK(result);
 			}
 
-			printf("Time %02d:%02d:%02d/%02d:%02d:%02d : %s\r", ms / 1000 / 60, ms / 1000 % 60, ms / 10 % 100, lenms / 1000 / 60, lenms / 1000 % 60, lenms / 10 % 100, paused ? "Paused " : playing ? "Playing" : "Stopped");
+			printf("[ %s ] %02d:%02d\r",
+				paused ? "Paused " : playing ? "Playing" : "Stopped",
+				ms / 1000 / 60, ms / 1000 % 60);
 			fflush(stdout);
 		}
 
@@ -343,12 +350,17 @@ int main(int argc, char *argv[])
 
 	printf("\n");
 
-	//pthread_join(playerthread, NULL);
+	/* If control has reached this point, then the user wants to quit the program.
+	 * Hence signal termination to the other thread.
+	 */
 	pthread_kill(playerthread, SIGALRM);
 
+	/* Wait until the other thread finishes clean-up and terminates */
+	pthread_join(playerthread, NULL);
+
 	/*
-	   Shut down
-	   */
+	 * Shut down FMODex
+	 */
 	result = FMOD_Sound_Release(sound);
 	ERRCHECK(result);
 	result = FMOD_System_Close(system);
