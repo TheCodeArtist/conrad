@@ -4,6 +4,9 @@
 #include <stdbool.h>
 #include <errno.h>
 
+/* for getopt_long() */
+#include <getopt.h>
+
 /* CURL for reader-thread */
 #include <curl/curl.h>
 #include <dirent.h>
@@ -23,11 +26,12 @@
 #define debug(fmt, ...) \
 	do { if (DEBUG) fprintf(stderr, fmt, __VA_ARGS__); } while (0)
 
-const char * STATION_URL="http://203.150.225.77:8000";
 const char *bodyfilename = "wave.dat";
 const int intial_buffering_delay = 3;
 const int fs_buffer_size = 1024;
 const int playback_buffer_size = 4096;
+
+char *station_url = "http://203.150.225.77:8000";
 
 CURL *curl_handle;
 FILE *bodyfile;
@@ -70,7 +74,7 @@ int curl_main(void)
 	curl_handle = curl_easy_init();
 
 	/* set URL to get */
-	curl_easy_setopt(curl_handle, CURLOPT_URL, STATION_URL);
+	curl_easy_setopt(curl_handle, CURLOPT_URL, station_url);
 
 	//struct curl_slist *headers=NULL;
 	//headers = curl_slist_append(headers, "Icy-MetaData:1"); 
@@ -211,6 +215,24 @@ FMOD_RESULT F_CALLBACK myseek(void *handle, unsigned int pos, void *userdata)
 	return FMOD_OK;
 }
 
+static void usage(FILE *fp, int argc, char **argv)
+{
+	fprintf(fp,
+			"Usage: conrad -s <url> [options]\n\n"
+			"Options:\n"
+			"-s | --station <url>   Radio station URL \n"
+			"-h | --help            Print this message\n"
+			"", argv[0]);
+}
+
+
+static const char short_options[] = "hs:";
+
+static const struct option
+long_options[] = {
+	{ "station", required_argument, NULL, 's' },
+	{ 0, 0, 0, 0 }
+};
 
 
 /****************************************************
@@ -230,6 +252,39 @@ int main(int argc, char *argv[])
 	FMOD_RESULT		result;
 	int			key, paused;
 	unsigned int		version;
+
+	for (;;) {
+		int idx;
+		int c;
+
+		c = getopt_long(argc, argv,
+				short_options, long_options, &idx);
+
+		if (-1 == c)
+			break;
+
+		switch (c) {
+			case 0:
+				/* getopt_long() flag */
+				break;
+
+			case 's':
+				/* getopt_long() flag */
+				station_url = optarg;
+				printf("station_url=%s\n", station_url);
+				break;
+
+			case 'h':
+				usage(stdout, argc, argv);
+				exit(EXIT_SUCCESS);
+
+			default:
+				usage(stderr, argc, argv);
+				exit(EXIT_FAILURE);
+		}
+	}
+
+
 
 	memset(&actions, 0, sizeof(actions));
 	sigemptyset(&actions.sa_mask);
@@ -268,29 +323,24 @@ int main(int argc, char *argv[])
 	result = FMOD_System_SetStreamBufferSize(system, playback_buffer_size, FMOD_TIMEUNIT_RAWBYTES);
 
 	result = FMOD_System_CreateStream(system,
-					  "./wave.dat",
-					  FMOD_HARDWARE | FMOD_2D | FMOD_IGNORETAGS,
-					  0,
-					  &sound);
+			"./wave.dat",
+			FMOD_HARDWARE | FMOD_2D | FMOD_IGNORETAGS,
+			0,
+			&sound);
 	ERRCHECK(result);
 
 	printf("====================================================================\n");
-	printf("  Playing %s\n", STATION_URL);
+	printf("  Playing %s\n", station_url);
 	printf("====================================================================\n");
 	printf("\n");
 	printf("Press space to pause, Esc to quit\n");
 	printf("\n");
 
-	/*
-	   Play the sound.
-	 */
-
+	/* Play the sound */
 	result = FMOD_System_PlaySound(system, FMOD_CHANNEL_FREE, sound, 0, &channel);
 	ERRCHECK(result);
 
-	/*
-	   Main loop.
-	 */
+	/* Main loop */
 	do
 	{
 		if (kbhit())
@@ -299,10 +349,10 @@ int main(int argc, char *argv[])
 
 			switch (key) {
 
-			case ' ' :
-				FMOD_Channel_GetPaused(channel, &paused);
-				FMOD_Channel_SetPaused(channel, !paused);
-				break;
+				case ' ' :
+					FMOD_Channel_GetPaused(channel, &paused);
+					FMOD_Channel_SetPaused(channel, !paused);
+					break;
 			}
 		}
 
@@ -339,8 +389,8 @@ int main(int argc, char *argv[])
 			}
 
 			printf("[ %s ] %02d:%02d\r",
-				paused ? "Paused " : playing ? "Playing" : "Stopped",
-				ms / 1000 / 60, ms / 1000 % 60);
+					paused ? "Paused " : playing ? "Playing" : "Stopped",
+					ms / 1000 / 60, ms / 1000 % 60);
 			fflush(stdout);
 		}
 

@@ -43,7 +43,7 @@ To build conrad, execute `make` in the root of the repository. Ensure that the a
 
 ## 3. Running conrad  
 
-`./conrad`
+`./conrad -s <station-url>`
 
 conrad saves the encoded audio stream of the current session in a local file "wave.dat" in the current directory.
 
