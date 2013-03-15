@@ -51,6 +51,6 @@ conrad saves the encoded audio stream of the current session in a local file "wa
 
 - **v0.1** (Initial Commit)
 
-
+    Currently does NOT support AAC streams.
 
 
