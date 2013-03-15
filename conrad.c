@@ -244,7 +244,7 @@ long_options[] = {
 int main(int argc, char *argv[])
 {
 	struct sigaction	actions;
-	pthread_t		playerthread;
+	pthread_t		fetcherthread;
 
 	FMOD_SYSTEM		*system;
 	FMOD_SOUND		*sound;
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
 	result = sigaction(SIGALRM,&actions,NULL);
 
 	/* Initiate the request-thread using CURL */
-	pthread_create(&playerthread, NULL, (void*)curl_main, NULL);
+	pthread_create(&fetcherthread, NULL, (void*)curl_main, NULL);
 
 	/* Delay to allow for station-connect and buffering */
 	sleep(intial_buffering_delay);
@@ -403,10 +403,10 @@ int main(int argc, char *argv[])
 	/* If control has reached this point, then the user wants to quit the program.
 	 * Hence signal termination to the other thread.
 	 */
-	pthread_kill(playerthread, SIGALRM);
+	pthread_kill(fetcherthread, SIGALRM);
 
 	/* Wait until the other thread finishes clean-up and terminates */
-	pthread_join(playerthread, NULL);
+	pthread_join(fetcherthread, NULL);
 
 	/*
 	 * Shut down FMODex
