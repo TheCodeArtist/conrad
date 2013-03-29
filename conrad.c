@@ -31,7 +31,7 @@ const int intial_buffering_delay = 3;
 const int fs_buffer_size = 1024;
 const int playback_buffer_size = 4096;
 
-char *station_url = "http://203.150.225.77:8000";
+char *station_url = "";
 
 CURL *curl_handle;
 FILE *bodyfile;
@@ -218,7 +218,7 @@ FMOD_RESULT F_CALLBACK myseek(void *handle, unsigned int pos, void *userdata)
 static void usage(FILE *fp, int argc, char **argv)
 {
 	fprintf(fp,
-			"Usage: conrad -s <url> [options]\n\n"
+			"Usage: conrad -s <url> [options]\n"
 			"Options:\n"
 			"-s | --station <url>   Radio station URL \n"
 			"-h | --help            Print this message\n"
@@ -284,7 +284,12 @@ int main(int argc, char *argv[])
 		}
 	}
 
-
+	/* Check if station URL NOT passed */
+	if(!(*station_url)) {
+		printf("Station URL not passed!\n");
+		usage(stderr, argc, argv);
+		exit(EXIT_FAILURE);
+	}
 
 	memset(&actions, 0, sizeof(actions));
 	sigemptyset(&actions.sa_mask);
