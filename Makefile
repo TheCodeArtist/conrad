@@ -20,7 +20,7 @@ LDFLAGS =
 # # We need -lsocket and -lnsl when on Solaris
 # # We need -lssl and -lcrypto when using libcurl with SSL support
 # # We need -lpthread for the pthread example
-LIBS = -lcurl ./fmodapi44407linux/api/lib/libfmodex.so
+LIBS = -lpthread -lcurl ./fmodapi44407linux/api/lib/libfmodex64.so
 
 # # Link the target with all objects and libraries
 $(TARGET) : $(OBJS)
